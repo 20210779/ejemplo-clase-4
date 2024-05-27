@@ -1,14 +1,20 @@
-import React, { useState, useEffect } from 'react';
-import { View, Text, FlatList, Image, StyleSheet, Dimensions, TextInput, ActivityIndicator } from 'react-native';
+import React, { useEffect, useState } from 'react';
+import { View, Text, FlatList, Image, StyleSheet, Dimensions, ActivityIndicator } from 'react-native';
 import axios from 'axios';
 import FormularioPokemon from '../components/FormularioPokemon';
 
 const WIDTH = Dimensions.get('window').width;
-const numColumns = 3;
+const numColumns = 2;
+
+// Función que determina si el color es claro
+const isLightColor = (color) => {
+  const lightColors = ['white', 'yellow', 'lightyellow', 'lightgrey', 'lightgray'];
+  return lightColors.includes(color);
+};
 
 export default function PokemonAxios() {
   const [pokemon, setPokemon] = useState([]);
-  const [nPokemon, setNPokemon]=useState(0); //La api comenzará mostrando solamente 20 pokemones
+  const [nPokemon, setNPokemon] = useState(20); // La API comenzará mostrando 20 pokemones por defecto
   const [loading, setLoading] = useState(false);
 
   useEffect(() => {
@@ -19,8 +25,26 @@ export default function PokemonAxios() {
     try {
       setLoading(true);
       const response = await axios.get(`https://pokeapi.co/api/v2/pokemon?limit=${nPokemon}`);
-      const dataPokemon = response.data;
-      setPokemon(dataPokemon.results);
+      const dataPokemon = response.data.results;
+      const detailedPokemon = await Promise.all(dataPokemon.map(async (poke) => {
+        const pokeDetails = await axios.get(poke.url);
+        const pokeSpecies = await axios.get(pokeDetails.data.species.url);
+        const typesInEspañol = await Promise.all(
+          pokeDetails.data.types.map(async (typeInfo) => {
+            const typeDetails = await axios.get(typeInfo.type.url);
+            const spanishName = typeDetails.data.names.find(name => name.language.name === 'es').name;
+            return spanishName;
+          })
+        );
+        return {
+          ...poke,
+          id: pokeDetails.data.id,
+          imageUrl: `https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/other/official-artwork/${pokeDetails.data.id}.png`,
+          color: pokeSpecies.data.color.name,
+          types: typesInEspañol, // nombres de tipos de Pokémon en español
+        };
+      }));
+      setPokemon(detailedPokemon);
       setLoading(false);
     } catch (error) {
       console.log("Hubo un error listando los pokemones", error);
@@ -29,14 +53,20 @@ export default function PokemonAxios() {
   }
 
   const renderItem = ({ item }) => {
+    const textColor = isLightColor(item.color) ? 'black' : 'white'; // Determina el color del texto basado en el color de fondo
     return (
-      <View style={styles.card}>
-        <Text>Número Pokedex: <Text style={styles.number}>{item.url.split('/')[6]}</Text></Text>
+      <View style={[styles.card, { backgroundColor: item.color }]}>
+        <Text style={[styles.name, { color: textColor }]}>{item.name}</Text>
+        <Text style={[styles.number, { color: textColor }]}>#{item.id.toString().padStart(3, '0')}</Text>
         <Image
           style={styles.image}
-          source={{ uri: `https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/${item.url.split('/')[6]}.png` }}
+          source={{ uri: item.imageUrl }}
         />
-        <Text style={styles.title}>{item.name}</Text>
+        <View style={styles.typesContainer}>
+          {item.types.map(type => (
+            <Text key={type} style={[styles.type, { color: textColor, borderColor: textColor }]}>{type}</Text>
+          ))}
+        </View>
       </View>
     );
   };
@@ -44,7 +74,7 @@ export default function PokemonAxios() {
   return (
     <View style={styles.container}>
       <FormularioPokemon
-        tituloFormulario='Listado de Pokemones usando Fetch'
+        tituloFormulario='Pokedex'
         labelInput='Ingrese la cantidad de pokemon a cargar: '
         placeHolderInput='20'
         valor={nPokemon}
@@ -54,6 +84,7 @@ export default function PokemonAxios() {
         <ActivityIndicator style={styles.loading} size="large" color="#0000ff" />
       ) : (
         <FlatList
+          key={numColumns} // Esta línea fue agregada para forzar la re-renderización
           data={pokemon}
           renderItem={renderItem}
           keyExtractor={(item) => item.name}
@@ -70,48 +101,54 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: '#fff',
     alignItems: 'center',
-    justifyContent: 'center',
-    paddingTop: 50,
-  },
-  header: {
-    fontSize: 24,
-    fontWeight: 'bold',
-    marginBottom: 10,
+    paddingTop: 20,
   },
   list: {
     justifyContent: 'center',
+    paddingHorizontal: 10,
   },
   card: {
     backgroundColor: '#f8f8f8',
-    borderRadius: 8,
-    margin: 5,
-    width: WIDTH / numColumns - 10,
+    borderRadius: 10,
+    margin: 10,
+    width: WIDTH / numColumns - 29,
     alignItems: 'center',
-    padding: 10,
+    padding: 15,
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.8,
     shadowRadius: 2,
     elevation: 4,
   },
-  title: {
-    fontSize: 16,
+  name: {
+    fontSize: 18,
     fontWeight: 'bold',
-    textAlign: 'center',
-    marginTop: 5,
+    color: '#fff',
     textTransform: 'capitalize',
   },
-  description: {
-    fontSize: 12,
-    textAlign: 'center',
-    marginTop: 5,
+  number: {
+    fontSize: 14,
+    fontWeight: 'bold',
+    color: '#fff',
+    marginBottom: 5,
   },
   image: {
-    width: 80,
-    height: 80,
+    width: 100,
+    height: 100,
+    marginBottom: 10,
   },
-  number:{
-    fontWeight:'bold'
+  typesContainer: {
+    flexDirection: 'row',
+  },
+  type: {
+    backgroundColor: 'rgba(255, 255, 255, 0.3)',
+    borderRadius: 12,
+    paddingVertical: 5,
+    paddingHorizontal: 10,
+    marginHorizontal: 5,
+    color: '#310857',
+    fontSize: 12,
+    textTransform: 'capitalize',
   },
   loading: {
     marginTop: 20,

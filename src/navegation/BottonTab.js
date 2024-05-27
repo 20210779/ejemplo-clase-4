@@ -33,9 +33,9 @@ export default function BottomTab() {
       component={PokemonAxios}
       options={{
         title: 'Lista Pokemon con Axios',
-        tabBarActiveTintColor: '#cc0000',
+        tabBarActiveTintColor: '#FA6555',
         headerStyle: {
-          backgroundColor: '#cc0000',
+          backgroundColor: '#FA6555',
           borderBottomRightRadius: 35,
           borderBottomLeftRadius: 35,
         },

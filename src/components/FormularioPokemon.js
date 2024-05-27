@@ -40,9 +40,11 @@ const styles = StyleSheet.create({
         width:'70%',
         backgroundColor:'#dfd7d7', 
         height:50, 
+        paddingStart: 20,
         fontWeight:'900', 
         borderRadius:5, 
         margin:5, 
+        marginStart: 45,
         fontSize:18
     },
     descripcion: {
