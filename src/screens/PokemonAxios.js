@@ -8,7 +8,7 @@ const numColumns = 3;
 
 export default function PokemonAxios() {
   const [pokemon, setPokemon] = useState([]);
-  const [nPokemon, setNPokemon]=useState(0); //La api comenzará mostrando solamente 25 pokemones
+  const [nPokemon, setNPokemon]=useState(0); //La api comenzará mostrando solamente 20 pokemones
   const [loading, setLoading] = useState(false);
 
   useEffect(() => {
