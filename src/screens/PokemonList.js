@@ -7,7 +7,7 @@ const WIDTH = Dimensions.get('window').width;
 const numColumns = 3;
 
 import PokemonItem from '../components/PokemonItem';
-import FormularioPokemon from '../components/FormularioPokemon';
+import FormularioPokemon from '../components/FormPokemon';
 
 export default function PokemonList() {
   const [pokemon, setPokemon] = useState([]);

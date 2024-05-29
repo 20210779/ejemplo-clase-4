@@ -1,41 +1,44 @@
 import React, { useState, useEffect } from 'react';
-import { View, Text, FlatList, Image, StyleSheet, Dimensions, TextInput, ActivityIndicator } from 'react-native';
+import { View, Text, FlatList, Image, StyleSheet, Dimensions, ActivityIndicator } from 'react-native';
 import axios from 'axios';
-import FormularioPokemon from '../components/FormularioPokemon';
+import FormularioCat from '../components/FormularioCat';
 
 const WIDTH = Dimensions.get('window').width;
 const numColumns = 3;
 
-export default function PokemonAxios() {
-  const [pokemon, setPokemon] = useState([]);
-  const [nPokemon, setNPokemon]=useState(0); //La api comenzará mostrando solamente 25 pokemones
+export default function CatAxios() {
+  const [cat, setCat] = useState([]);
+  const [nCat, setNCat] = useState(25); // La API comenzará mostrando 25 gatos
   const [loading, setLoading] = useState(false);
 
   useEffect(() => {
-    getPokemon(nPokemon);
-  }, [nPokemon]);
+    getCat(nCat);
+  }, [nCat]);
 
-  const getPokemon = async (nPokemon) => {
+  const getCat = async (limit) => {
     try {
       setLoading(true);
-      const response = await axios.get(`https://pokeapi.co/api/v2/pokemon?limit=${nPokemon}`);
-      const dataPokemon = response.data;
-      setPokemon(dataPokemon.results);
+      const response = await axios.get(`https://api.thecatapi.com/v1/breeds?limit=${limit}`);
+      setCat(response.data);
       setLoading(false);
     } catch (error) {
-      console.log("Hubo un error listando los pokemones", error);
+      console.log("Hubo un error listando los gatos", error);
       setLoading(false);
     }
-  }
+  };
 
   const renderItem = ({ item }) => {
     return (
       <View style={styles.card}>
-        <Text>Número Pokedex: <Text style={styles.number}>{item.url.split('/')[6]}</Text></Text>
-        <Image
-          style={styles.image}
-          source={{ uri: `https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/${item.url.split('/')[6]}.png` }}
-        />
+        <Text>Clave Gátones: <Text style={styles.number}>{item.id}</Text></Text>
+        {item.reference_image_id ? (
+          <Image
+            style={styles.image}
+            source={{ uri: `https://cdn2.thecatapi.com/images/${item.reference_image_id}.jpg` }}
+          />
+        ) : (
+          <Text>No image available</Text>
+        )}
         <Text style={styles.title}>{item.name}</Text>
       </View>
     );
@@ -43,20 +46,20 @@ export default function PokemonAxios() {
 
   return (
     <View style={styles.container}>
-      <FormularioPokemon
-        tituloFormulario='Listado de Pokemones usando Fetch'
-        labelInput='Ingrese la cantidad de pokemon a cargar: '
+      <FormularioCat
+        tituloFormulario='Listado de Gatos'
+        labelInput='Ingrese la cantidad de gatos a cargar: '
         placeHolderInput='20'
-        valor={nPokemon}
-        setValor={setNPokemon}
+        valor={nCat}
+        setValor={setNCat}
       />
       {loading ? (
         <ActivityIndicator style={styles.loading} size="large" color="#0000ff" />
       ) : (
         <FlatList
-          data={pokemon}
+          data={cat}
           renderItem={renderItem}
-          keyExtractor={(item) => item.name}
+          keyExtractor={(item) => item.id}
           numColumns={numColumns}
           contentContainerStyle={styles.list}
         />
@@ -72,11 +75,6 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
     paddingTop: 50,
-  },
-  header: {
-    fontSize: 24,
-    fontWeight: 'bold',
-    marginBottom: 10,
   },
   list: {
     justifyContent: 'center',
@@ -101,17 +99,12 @@ const styles = StyleSheet.create({
     marginTop: 5,
     textTransform: 'capitalize',
   },
-  description: {
-    fontSize: 12,
-    textAlign: 'center',
-    marginTop: 5,
-  },
   image: {
     width: 80,
     height: 80,
   },
-  number:{
-    fontWeight:'bold'
+  number: {
+    fontWeight: 'bold',
   },
   loading: {
     marginTop: 20,
